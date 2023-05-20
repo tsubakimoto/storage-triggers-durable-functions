@@ -12,10 +12,17 @@ using Microsoft.Extensions.Logging;
 
 namespace DurableFunctionApp1;
 
-public static class Orchestrator
+public class Orchestrator
 {
+    private readonly ILogger<Orchestrator> logger;
+
+    public Orchestrator(ILogger<Orchestrator> logger)
+    {
+        this.logger = logger;
+    }
+
     [FunctionName("Orchestrator")]
-    public static async Task<List<string>> RunOrchestrator(
+    public async Task<List<string>> RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         var outputs = new List<string>();
@@ -31,31 +38,30 @@ public static class Orchestrator
 
 #if false
     [FunctionName(nameof(SayHello))]
-    public static string SayHello([ActivityTrigger] string name, ILogger log)
+    public string SayHello([ActivityTrigger] string name)
     {
-        log.LogInformation("Saying hello to {name}.", name);
+        logger.LogInformation("Saying hello to {name}.", name);
         return $"Hello {name}!";
     }
 #endif
 
     [FunctionName(nameof(SayHello))]
-    public static string SayHello([ActivityTrigger] IDurableActivityContext context, ILogger log)
+    public string SayHello([ActivityTrigger] IDurableActivityContext context)
     {
         var name = context.GetInput<string>();
-        log.LogInformation("Saying hello to {name}.", name);
+        logger.LogInformation("Saying hello to {name}.", name);
         return $"Hello {name}!";
     }
 
     [FunctionName("Orchestrator_HttpStart")]
-    public static async Task<HttpResponseMessage> HttpStart(
+    public async Task<HttpResponseMessage> HttpStart(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestMessage req,
-        [DurableClient] IDurableOrchestrationClient starter,
-        ILogger log)
+        [DurableClient] IDurableOrchestrationClient starter)
     {
         // Function input comes from the request content.
         string instanceId = await starter.StartNewAsync("Orchestrator", null);
 
-        log.LogInformation("Started orchestration with ID = '{instanceId}'.", instanceId);
+        logger.LogInformation("Started orchestration with ID = '{instanceId}'.", instanceId);
 
         return starter.CreateCheckStatusResponse(req, instanceId);
     }
@@ -63,33 +69,31 @@ public static class Orchestrator
     #region Storage triggers
 
     [FunctionName(nameof(BlobTriggerFunction))]
-    public static async Task BlobTriggerFunction(
+    public async Task BlobTriggerFunction(
         //[BlobTrigger("myblob-items/{name}")] string myBlob,
         [BlobTrigger("myblob-items/{name}")] BlobClient myBlob,
-        [DurableClient] IDurableOrchestrationClient starter,
-        ILogger log)
+        [DurableClient] IDurableOrchestrationClient starter)
     {
         string instanceId = await starter.StartNewAsync(nameof(OrchestratorFunction), null, myBlob);
         BlobContainerClient containerClient = myBlob.GetParentBlobContainerClient();
         BlobServiceClient blobServiceClient = containerClient.GetParentBlobServiceClient();
 
-        log.LogInformation($"Started orchestration with ID = '{instanceId}' by blob trigger.");
+        logger.LogInformation($"Started orchestration with ID = '{instanceId}' by blob trigger.");
     }
 
     [FunctionName(nameof(QueueTriggerFunction))]
-    public static async Task QueueTriggerFunction(
+    public async Task QueueTriggerFunction(
         [QueueTrigger("myqueue-items")] string myQueueItem,
         //[QueueTrigger("myqueue-items")] QueueClient myQueueItem,
-        [DurableClient] IDurableOrchestrationClient starter,
-        ILogger log)
+        [DurableClient] IDurableOrchestrationClient starter)
     {
         string instanceId = await starter.StartNewAsync(nameof(OrchestratorFunction), null, myQueueItem);
 
-        log.LogInformation($"Started orchestration with ID = '{instanceId}' by queue trigger.");
+        logger.LogInformation($"Started orchestration with ID = '{instanceId}' by queue trigger.");
     }
 
     [FunctionName(nameof(OrchestratorFunction))]
-    public static async Task<List<string>> OrchestratorFunction(
+    public async Task<List<string>> OrchestratorFunction(
         [OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         string input = context.GetInput<string>();
