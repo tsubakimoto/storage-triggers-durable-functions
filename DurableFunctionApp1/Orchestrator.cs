@@ -78,8 +78,8 @@ public static class Orchestrator
 
     [FunctionName(nameof(QueueTriggerFunction))]
     public static async Task QueueTriggerFunction(
-        //[QueueTrigger("myqueue-items")] string myQueueItem,
-        [QueueTrigger("myqueue-items")] QueueClient myQueueItem,
+        [QueueTrigger("myqueue-items")] string myQueueItem,
+        //[QueueTrigger("myqueue-items")] QueueClient myQueueItem,
         [DurableClient] IDurableOrchestrationClient starter,
         ILogger log)
     {
