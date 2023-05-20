@@ -26,9 +26,19 @@ public static class Orchestrator
         return outputs;
     }
 
+#if false
     [FunctionName(nameof(SayHello))]
     public static string SayHello([ActivityTrigger] string name, ILogger log)
     {
+        log.LogInformation("Saying hello to {name}.", name);
+        return $"Hello {name}!";
+    }
+#endif
+
+    [FunctionName(nameof(SayHello))]
+    public static string SayHello([ActivityTrigger] IDurableActivityContext context, ILogger log)
+    {
+        var name = context.GetInput<string>();
         log.LogInformation("Saying hello to {name}.", name);
         return $"Hello {name}!";
     }
@@ -46,4 +56,47 @@ public static class Orchestrator
 
         return starter.CreateCheckStatusResponse(req, instanceId);
     }
+
+    #region Storage triggers
+
+    [FunctionName(nameof(BlobTriggerFunction))]
+    public static async Task BlobTriggerFunction(
+        [BlobTrigger("myblob-items/{name}")] string myBlob,
+        [DurableClient] IDurableOrchestrationClient starter,
+        ILogger log)
+    {
+        string instanceId = await starter.StartNewAsync(nameof(OrchestratorFunction), null, myBlob);
+
+        log.LogInformation($"Started orchestration with ID = '{instanceId}' by blob trigger.");
+    }
+
+    [FunctionName(nameof(QueueTriggerFunction))]
+    public static async Task QueueTriggerFunction(
+        [QueueTrigger("myqueue-items")] string myQueueItem,
+        [DurableClient] IDurableOrchestrationClient starter,
+        ILogger log)
+    {
+        string instanceId = await starter.StartNewAsync(nameof(OrchestratorFunction), null, myQueueItem);
+
+        log.LogInformation($"Started orchestration with ID = '{instanceId}' by queue trigger.");
+    }
+
+    [FunctionName(nameof(OrchestratorFunction))]
+    public static async Task<List<string>> OrchestratorFunction(
+        [OrchestrationTrigger] IDurableOrchestrationContext context)
+    {
+        string input = context.GetInput<string>();
+        var outputs = new List<string>();
+
+        // Replace "hello" with the name of your Durable Activity Function.
+        outputs.Add(await context.CallActivityAsync<string>(nameof(SayHello), "Tokyo"));
+        outputs.Add(await context.CallActivityAsync<string>(nameof(SayHello), "Seattle"));
+        outputs.Add(await context.CallActivityAsync<string>(nameof(SayHello), "London"));
+        outputs.Add(await context.CallActivityAsync<string>(nameof(SayHello), input));
+
+        return outputs;
+    }
+
+    #endregion
+
 }
