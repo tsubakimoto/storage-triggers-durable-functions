@@ -16,13 +16,16 @@ public class Orchestrator
 {
     private readonly ILogger<Orchestrator> logger;
     private readonly IQueueService queueService;
+    private readonly BlobServiceClient blobServiceClient;
 
     public Orchestrator(
         ILogger<Orchestrator> logger,
-        IQueueService queueService)
+        IQueueService queueService,
+        BlobServiceClient blobServiceClient)
     {
         this.logger = logger;
         this.queueService = queueService;
+        this.blobServiceClient = blobServiceClient;
     }
 
     [FunctionName("Orchestrator")]
@@ -79,8 +82,15 @@ public class Orchestrator
         [DurableClient] IDurableOrchestrationClient starter)
     {
         string instanceId = await starter.StartNewAsync(nameof(OrchestratorFunction), null, myBlob);
+
+        // Get clients from BlobClient
         BlobContainerClient containerClient = myBlob.GetParentBlobContainerClient();
         BlobServiceClient blobServiceClient = containerClient.GetParentBlobServiceClient();
+
+        // Show properties from BlobServiceClient
+        logger.LogInformation($"BlobServiceClient:");
+        logger.LogInformation($"\tAccontName: {blobServiceClient.AccountName}");
+        logger.LogInformation($"\tUri: {blobServiceClient.Uri}");
 
         logger.LogInformation($"Started orchestration with ID = '{instanceId}' by blob trigger.");
     }
@@ -109,14 +119,14 @@ public class Orchestrator
     public async Task<List<string>> OrchestratorFunction(
         [OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        string input = context.GetInput<string>();
+        //string input = context.GetInput<string>();
         var outputs = new List<string>();
 
         // Replace "hello" with the name of your Durable Activity Function.
         outputs.Add(await context.CallActivityAsync<string>(nameof(SayHello), "Tokyo"));
         outputs.Add(await context.CallActivityAsync<string>(nameof(SayHello), "Seattle"));
         outputs.Add(await context.CallActivityAsync<string>(nameof(SayHello), "London"));
-        outputs.Add(await context.CallActivityAsync<string>(nameof(SayHello), input));
+        //outputs.Add(await context.CallActivityAsync<string>(nameof(SayHello), input));
 
         return outputs;
     }

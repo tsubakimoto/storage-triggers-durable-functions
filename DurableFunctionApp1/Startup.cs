@@ -14,9 +14,9 @@ public class Startup : FunctionsStartup
     {
         builder.Services.AddHttpClient();
 
-        // https://stackoverflow.com/a/74421494
         builder.Services.AddAzureClients(clientBuilder =>
         {
+            // https://stackoverflow.com/a/74421494
             clientBuilder.AddClient<QueueClient, QueueClientOptions>(options =>
             {
                 IServiceProvider sp = builder.Services.BuildServiceProvider();
@@ -31,6 +31,7 @@ public class Startup : FunctionsStartup
 
             // https://learn.microsoft.com/ja-jp/dotnet/azure/sdk/dependency-injection
             clientBuilder.AddQueueServiceClient(connectionString);
+            clientBuilder.AddBlobServiceClient(connectionString);
         });
 
         builder.Services.AddSingleton<IQueueService, QueueService>();
