@@ -70,8 +70,8 @@ public static class Orchestrator
         ILogger log)
     {
         string instanceId = await starter.StartNewAsync(nameof(OrchestratorFunction), null, myBlob);
-        var containerClient = myBlob.GetParentBlobContainerClient();
-        var blobServiceClient = containerClient.GetParentBlobServiceClient();
+        BlobContainerClient containerClient = myBlob.GetParentBlobContainerClient();
+        BlobServiceClient blobServiceClient = containerClient.GetParentBlobServiceClient();
 
         log.LogInformation($"Started orchestration with ID = '{instanceId}' by blob trigger.");
     }
