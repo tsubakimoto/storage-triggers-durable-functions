@@ -10,9 +10,11 @@ public class QueueService : IQueueService
     {
         this.queueClient = queueClient;
     }
+
+    public QueueClient GetQueueClient() => queueClient;
 }
 
 public interface IQueueService
 {
-
+    QueueClient GetQueueClient();
 }

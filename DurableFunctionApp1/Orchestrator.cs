@@ -15,10 +15,14 @@ namespace DurableFunctionApp1;
 public class Orchestrator
 {
     private readonly ILogger<Orchestrator> logger;
+    private readonly IQueueService queueService;
 
-    public Orchestrator(ILogger<Orchestrator> logger)
+    public Orchestrator(
+        ILogger<Orchestrator> logger,
+        IQueueService queueService)
     {
         this.logger = logger;
+        this.queueService = queueService;
     }
 
     [FunctionName("Orchestrator")]
@@ -88,6 +92,10 @@ public class Orchestrator
         [DurableClient] IDurableOrchestrationClient starter)
     {
         string instanceId = await starter.StartNewAsync(nameof(OrchestratorFunction), null, myQueueItem);
+
+        // Enqueue
+        QueueClient queueClient = queueService.GetQueueClient();
+        queueClient.SendMessage($"{myQueueItem}{myQueueItem}");
 
         logger.LogInformation($"Started orchestration with ID = '{instanceId}' by queue trigger.");
     }
