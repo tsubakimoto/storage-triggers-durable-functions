@@ -97,6 +97,11 @@ public class Orchestrator
         QueueClient queueClient = queueService.GetQueueClient();
         queueClient.SendMessage($"{myQueueItem}{myQueueItem}");
 
+        // Create queue
+        QueueServiceClient queueServiceClient = queueService.GetQueueServiceClient();
+        QueueClient queueClient2 = queueServiceClient.CreateQueue("myqueue-items-2");
+        queueClient2.SendMessage(myQueueItem);
+
         logger.LogInformation($"Started orchestration with ID = '{instanceId}' by queue trigger.");
     }
 

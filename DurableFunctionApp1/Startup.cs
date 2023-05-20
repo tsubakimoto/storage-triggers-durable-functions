@@ -24,6 +24,13 @@ public class Startup : FunctionsStartup
                 string connectionString = configuration["AzureWebJobsStorage"];
                 return new(connectionString, "myqueue-items");
             });
+
+            IServiceProvider sp = builder.Services.BuildServiceProvider();
+            IConfiguration configuration = sp.GetRequiredService<IConfiguration>();
+            string connectionString = configuration["AzureWebJobsStorage"];
+
+            // https://learn.microsoft.com/ja-jp/dotnet/azure/sdk/dependency-injection
+            clientBuilder.AddQueueServiceClient(connectionString);
         });
 
         builder.Services.AddSingleton<IQueueService, QueueService>();
